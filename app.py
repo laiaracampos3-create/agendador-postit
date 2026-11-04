@@ -1,190 +1,269 @@
-from datetime import datetime
-import sqlite3
-import dateparser
 import io
+import os
+from datetime import datetime, time
 import pandas as pd
 import streamlit as st
 
+# Configuração da Página
 st.set_page_config(
-    page_title="Agenda & Post-its", page_icon="📅", layout="wide"
+    page_title="Agenda & Planejador Pessoal",
+    page_icon="🌸",
+    layout="wide",
+    initial_sidebar_state="expanded",
 )
 
-# --- BANCO DE DADOS SQLITE (Garante que nada apague) ---
-CONN = sqlite3.connect("agenda_postits.db", check_same_thread=False)
-CURSOR = CONN.cursor()
-
-CURSOR.execute("""
-    CREATE TABLE IF NOT EXISTS lembretes (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        texto TEXT NOT NULL,
-        categoria TEXT NOT NULL,
-        data_agendada TEXT,
-        criado_em TEXT,
-        concluido INTEGER DEFAULT 0
-    )
-""")
-CONN.commit()
-
-# --- ESTILIZAÇÃO VISUAL ---
+# Estilização CSS Profissional e Feminina
 st.markdown(
     """
     <style>
-    .postit {
-        padding: 15px;
-        border-radius: 8px;
-        box-shadow: 2px 2px 8px rgba(0,0,0,0.12);
-        margin-bottom: 15px;
-        color: #2c3e50;
+    /* Estilo Global e Fundo */
+    .stApp {
+        background-color: #FAF6F0;
     }
-    .postit-amarelo { background-color: #fefabc; border-left: 6px solid #f1c40f; }
-    .postit-vermelho { background-color: #ffdde1; border-left: 6px solid #ee5253; }
-    .postit-azul { background-color: #d0e8f2; border-left: 6px solid #3498db; }
-    .postit-header { font-weight: bold; font-size: 1.1em; margin-bottom: 5px; }
-    .postit-date { font-size: 0.85em; color: #555555; }
+    
+    /* Fontes e Títulos */
+    h1, h2, h3 {
+        color: #4A3E3D !important;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    /* Cards Estilo Agenda / Post-it */
+    .card-compromisso {
+        padding: 18px;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        margin-bottom: 18px;
+        background-color: #FFFFFF;
+        transition: transform 0.2s ease;
+    }
+    .card-rosa { border-left: 6px solid #E8A0BF; background-color: #FFF5F8; }
+    .card-vinho { border-left: 6px solid #C05C7E; background-color: #FDF0F3; }
+    .card-dourado { border-left: 6px solid #D4A373; background-color: #FEFAE0; }
+    .card-lilás { border-left: 6px solid #B39DDB; background-color: #F3E5F5; }
+
+    .card-header {
+        font-weight: 600;
+        font-size: 1.15em;
+        color: #2D2424;
+        margin-bottom: 6px;
+    }
+    .card-detalhe {
+        font-size: 0.9em;
+        color: #6D5D5D;
+        margin-bottom: 3px;
+    }
+    .badge-categoria {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 15px;
+        font-size: 0.8em;
+        font-weight: bold;
+        color: #FFF;
+        margin-top: 5px;
+    }
+    .bg-rosa { background-color: #E8A0BF; }
+    .bg-vinho { background-color: #C05C7E; }
+    .bg-dourado { background-color: #D4A373; }
+    .bg-lilas { background-color: #B39DDB; }
+
+    /* Botões */
+    .stButton>button {
+        border-radius: 8px;
+        border: none;
+        background-color: #C05C7E;
+        color: white;
+        font-weight: 600;
+    }
+    .stButton>button:hover {
+        background-color: #A34866;
+        color: white;
+    }
     </style>
 """,
     unsafe_allow_html=True,
 )
 
+NOME_ARQUIVO = "lembretes.csv"
 
-def carregar_dados():
-  return pd.read_sql_query("SELECT * FROM lembretes", CONN)
+# Carregar Dados
+if os.path.exists(NOME_ARQUIVO):
+  df = pd.read_csv(NOME_ARQUIVO)
+else:
+  df = pd.DataFrame(
+      columns=[
+          "id",
+          "titulo",
+          "categoria",
+          "data_evento",
+          "hora_evento",
+          "detalhes",
+          "criado_em",
+          "concluido",
+      ]
+  )
 
+st.title("🌸 Agenda & Planejador de Atividades")
+st.caption("Organize seus compromissos e rotinas com praticidade e estilo.")
 
-st.title("📅 Agenda de Compromissos & Post-its")
+# Sidebar - Novo Compromisso
+with st.sidebar:
+  st.header("✨ Novo Compromisso")
 
-# --- FORMULÁRIO DE NOVO LEMBRETE ---
-with st.container():
-  col1, col2, col3 = st.columns([3, 1.5, 1])
-  with col1:
-    novo_texto = st.text_input(
-        "Novo Lembrete:", placeholder="ex: 25/11 demissão lucas ás 14:00"
+  with st.form("form_compromisso", clear_on_submit=True):
+    titulo = st.text_input(
+        "Título do Compromisso / Tarefa:",
+        placeholder="ex: Demissão Lucas",
     )
-  with col2:
+
+    col_d, col_h = st.columns(2)
+    with col_d:
+      data_sel = st.date_input("Data:", value=datetime.now())
+    with col_h:
+      hora_sel = st.time_input("Horário:", value=time(14, 0))
+
     categoria = st.selectbox(
-        "Prioridade / Cor:",
-        options=["Normal 🟡", "Urgente 🔴", "Rotina/DP 🔵"],
+        "Categoria / Prioridade:",
+        options=[
+            "DP & RH 💼",
+            "Urgente 🚨",
+            "Reunião 🤝",
+            "Pessoal / Outros 🎀",
+        ],
     )
-  with col3:
-    st.write("##")
-    if st.button("📌 Salvar Lembrete", use_container_width=True):
-      if novo_texto.strip():
-        cor_mapa = {
-            "Normal 🟡": "amarelo",
-            "Urgente 🔴": "vermelho",
-            "Rotina/DP 🔵": "azul",
+
+    detalhes = st.text_area(
+        "Observações / Detalhes (opcional):",
+        placeholder="Adicione informações importantes aqui...",
+        height=70,
+    )
+
+    submetido = st.form_submit_button(
+        "📌 Agendar Compromisso", use_container_width=True
+    )
+
+    if submetido:
+      if titulo.strip():
+        mapa_estilos = {
+            "DP & RH 💼": ("rosa", "bg-rosa"),
+            "Urgente 🚨": ("vinho", "bg-vinho"),
+            "Reunião 🤝": ("dourado", "bg-dourado"),
+            "Pessoal / Outros 🎀": ("lilás", "bg-lilas"),
         }
-        estilo_cor = cor_mapa.get(categoria, "amarelo")
+        estilo, bg_badge = mapa_estilos.get(categoria, ("rosa", "bg-rosa"))
 
-        data_parsed = dateparser.parse(
-            novo_texto,
-            languages=["pt"],
-            settings={"PREFER_DATES_FROM": "future", "DATE_ORDER": "DMY"},
-        )
+        novo_id = int(df["id"].max() + 1) if not df.empty else 1
+        nova_linha = pd.DataFrame([{
+            "id": novo_id,
+            "titulo": titulo,
+            "categoria": categoria,
+            "data_evento": data_sel.strftime("%d/%m/%Y"),
+            "hora_evento": hora_sel.strftime("%H:%M"),
+            "detalhes": detalhes,
+            "criado_em": datetime.now().strftime("%d/%m/%Y %H:%M"),
+            "concluido": False,
+        }])
 
-        data_str = (
-            data_parsed.strftime("%d/%m/%Y %H:%M")
-            if data_parsed
-            else "Sem data definida"
-        )
-        criado_em = datetime.now().strftime("%d/%m/%Y %H:%M")
-
-        CURSOR.execute(
-            """
-            INSERT INTO lembretes (texto, categoria, data_agendada, criado_em, concluido)
-            VALUES (?, ?, ?, ?, 0)
-        """,
-            (novo_texto, estilo_cor, data_str, criado_em),
-        )
-        CONN.commit()
-        st.success("Lembrete salvo com sucesso!")
+        df = pd.concat([df, nova_linha], ignore_index=True)
+        df.to_csv(NOME_ARQUIVO, index=False)
+        st.success("Compromisso agendado com sucesso!")
         st.rerun()
 
-st.divider()
+# Conteúdo Principal - Abas
+aba1, aba2 = st.tabs(["📋 Minha Agenda", "📊 Histórico & Exportação Excel"])
 
-# --- CARREGAR DADOS ---
-df = carregar_dados()
+with aba1:
+  pendentes = df[df["concluido"] == False]
 
-# --- PAINEL DE EXPORTAÇÃO PARA EXCEL ---
-col_titulo, col_excel = st.columns([3, 1])
+  if pendentes.empty:
+    st.info("Nenhum compromisso pendente. Sua agenda está em dia! ✨")
+  else:
+    # Ordenar por data
+    cols = st.columns(3)
+    for index, (idx, row) in enumerate(pendentes.iterrows()):
+      col_idx = index % 3
 
-with col_titulo:
-  st.subheader("📋 Meus Lembretes Pendentes")
+      cat = row.get("categoria", "DP & RH 💼")
+      estilo_map = {
+          "DP & RH 💼": "card-rosa",
+          "Urgente 🚨": "card-vinho",
+          "Reunião 🤝": "card-dourado",
+          "Pessoal / Outros 🎀": "card-lilás",
+      }
+      classe_card = estilo_map.get(cat, "card-rosa")
 
-with col_excel:
-  if not df.empty:
-    # Gerar arquivo Excel em memória para download
-    buffer = io.BytesIO()
-    with pd.ExcelWriter(buffer, engine="openpyxl") as writer:
-      df_export = df.copy()
-      df_export["concluido"] = df_export["concluido"].map(
-          {0: "Pendente", 1: "Concluído"}
-      )
-      df_export.columns = [
-          "ID",
-          "Compromisso",
-          "Categoria/Cor",
-          "Data Agendada",
-          "Criado Em",
-          "Status",
-      ]
-      df_export.to_excel(writer, index=False, sheet_name="Agenda_Lembretes")
+      with cols[col_idx]:
+        obs_html = (
+            f"<div class='card-detalhe'>📝 {row['detalhes']}</div>"
+            if pd.notna(row["detalhes"]) and str(row["detalhes"]).strip()
+            else ""
+        )
 
-    st.download_button(
-        label="📥 Exportar para Excel (.xlsx)",
-        data=buffer.getvalue(),
-        file_name=f"agenda_lembretes_{datetime.now().strftime('%Y%m%d')}.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        use_container_width=True,
-    )
-
-# --- EXIBIÇÃO EM CARD / POST-IT ---
-pendentes = df[df["concluido"] == 0]
-
-if pendentes.empty:
-  st.info("Nenhum compromisso pendente no momento!")
-else:
-  cols = st.columns(3)
-  for index, row in pendentes.reset_index(drop=True).iterrows():
-    col_idx = index % 3
-    classe_css = row["categoria"]
-
-    with cols[col_idx]:
-      st.markdown(
-          f"""
-                <div class="postit postit-{classe_css}">
-                    <div class="postit-header">📌 {row['texto']}</div>
-                    <div class="postit-date">⏰ Agendado para: <b>{row['data_agendada']}</b></div>
-                    <div class="postit-date">📅 Criado em: {row['criado_em']}</div>
+        st.markdown(
+            f"""
+                <div class="card-compromisso {classe_card}">
+                    <div class="card-header">📌 {row['titulo']}</div>
+                    <div class="card-detalhe">📅 <b>Data:</b> {row['data_evento']}</div>
+                    <div class="card-detalhe">⏰ <b>Hora:</b> {row['hora_evento']} h</div>
+                    {obs_html}
+                    <div class="card-detalhe" style="margin-top: 8px;">🏷️ {row['categoria']}</div>
                 </div>
             """,
-          unsafe_allow_html=True,
+            unsafe_allow_html=True,
+        )
+
+        if st.button(f"✅ Concluir #{row['id']}", key=f"btn_{row['id']}"):
+          df.loc[df["id"] == row["id"], "concluido"] = True
+          df.to_csv(NOME_ARQUIVO, index=False)
+          st.rerun()
+
+with aba2:
+  col_t, col_btn = st.columns([3, 1])
+
+  with col_t:
+    st.subheader("📊 Relatório de Compromissos")
+
+  with col_btn:
+    if not df.empty:
+      buffer = io.BytesIO()
+      with pd.ExcelWriter(buffer, engine="openpyxl") as writer:
+        df_export = df.copy()
+        df_export["concluido"] = df_export["concluido"].map(
+            {False: "Pendente", True: "Concluído"}
+        )
+        df_export.columns = [
+            "ID",
+            "Compromisso",
+            "Categoria",
+            "Data",
+            "Hora",
+            "Detalhes",
+            "Criado Em",
+            "Status",
+        ]
+        df_export.to_excel(writer, index=False, sheet_name="Agenda_Oficial")
+
+      st.download_button(
+          label="📥 Baixar em Excel (.xlsx)",
+          data=buffer.getvalue(),
+          file_name=(
+              f"agenda_compromissos_{datetime.now().strftime('%Y%m%d')}.xlsx"
+          ),
+          mime=(
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+          ),
+          use_container_width=True,
       )
 
-      if st.button(f"✅ Concluir #{row['id']}", key=f"btn_{row['id']}"):
-        CURSOR.execute(
-            "UPDATE lembretes SET concluido = 1 WHERE id = ?", (row["id"],)
-        )
-        CONN.commit()
-        st.rerun()
-
-# --- HISTÓRICO / TABELA DE CONCLUÍDOS ---
-with st.expander("📁 Ver compromissos já concluídos"):
-  concluidos = df[df["concluido"] == 1]
-  if concluidos.empty:
-    st.write("Nenhum compromisso concluído ainda.")
-  else:
-    st.dataframe(
-        concluidos[
-            ["id", "texto", "categoria", "data_agendada", "criado_em"]
-        ].rename(
-            columns={
-                "id": "ID",
-                "texto": "Compromisso",
-                "categoria": "Cor",
-                "data_agendada": "Data Agendada",
-                "criado_em": "Criado Em",
-            }
-        ),
-        use_container_width=True,
-    )
+  st.dataframe(
+      df.rename(
+          columns={
+              "id": "ID",
+              "titulo": "Compromisso",
+              "categoria": "Categoria",
+              "data_evento": "Data",
+              "hora_evento": "Hora",
+              "concluido": "Concluído?",
+          }
+      ),
+      use_container_width=True,
+  )
