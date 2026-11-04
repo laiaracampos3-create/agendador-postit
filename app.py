@@ -6,77 +6,99 @@ import streamlit as st
 
 # Configuração da Página
 st.set_page_config(
-    page_title="Agenda & Planejador Pessoal",
-    page_icon="🌸",
+    page_title="Gestão de Compromissos",
+    page_icon="🗓️",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
-# Estilização CSS Profissional e Feminina
+# Estilização CSS Clean, Executiva e Sofisticada
 st.markdown(
     """
     <style>
-    /* Estilo Global e Fundo */
+    /* Fundo da Aplicação */
     .stApp {
-        background-color: #FAF6F0;
+        background-color: #F8F9FA;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     }
     
-    /* Fontes e Títulos */
+    /* Tipografia e Títulos */
     h1, h2, h3 {
-        color: #4A3E3D !important;
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        color: #1E293B !important;
+        font-weight: 600 !important;
+        letter-spacing: -0.5px;
     }
     
-    /* Cards Estilo Agenda / Post-it */
+    /* Cards de Compromissos Minimalistas */
     .card-compromisso {
-        padding: 18px;
+        background: #FFFFFF;
+        border: 1px solid #E2E8F0;
         border-radius: 12px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-        margin-bottom: 18px;
-        background-color: #FFFFFF;
-        transition: transform 0.2s ease;
+        padding: 20px;
+        margin-bottom: 16px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        transition: all 0.2s ease-in-out;
     }
-    .card-rosa { border-left: 6px solid #E8A0BF; background-color: #FFF5F8; }
-    .card-vinho { border-left: 6px solid #C05C7E; background-color: #FDF0F3; }
-    .card-dourado { border-left: 6px solid #D4A373; background-color: #FEFAE0; }
-    .card-lilás { border-left: 6px solid #B39DDB; background-color: #F3E5F5; }
+    .card-compromisso:hover {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        border-color: #CBD5E1;
+    }
 
-    .card-header {
+    /* Bordas Indicadoras de Categoria */
+    .border-dp { border-top: 4px solid #6366F1; }
+    .border-urgente { border-top: 4px solid #EF4444; }
+    .border-reuniao { border-top: 4px solid #0EA5E9; }
+    .border-rotina { border-top: 4px solid #10B981; }
+
+    /* Elementos Internos do Card */
+    .card-title {
+        font-size: 1.1em;
         font-weight: 600;
-        font-size: 1.15em;
-        color: #2D2424;
-        margin-bottom: 6px;
+        color: #0F172A;
+        margin-bottom: 8px;
     }
-    .card-detalhe {
-        font-size: 0.9em;
-        color: #6D5D5D;
-        margin-bottom: 3px;
+    .card-info {
+        font-size: 0.88em;
+        color: #475569;
+        margin-bottom: 4px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
     }
-    .badge-categoria {
+    .card-obs {
+        font-size: 0.85em;
+        color: #64748B;
+        background-color: #F1F5F9;
+        padding: 8px 12px;
+        border-radius: 6px;
+        margin-top: 10px;
+    }
+    .card-tag {
         display: inline-block;
         padding: 3px 10px;
-        border-radius: 15px;
-        font-size: 0.8em;
-        font-weight: bold;
-        color: #FFF;
-        margin-top: 5px;
+        border-radius: 20px;
+        font-size: 0.75em;
+        font-weight: 600;
+        margin-top: 12px;
     }
-    .bg-rosa { background-color: #E8A0BF; }
-    .bg-vinho { background-color: #C05C7E; }
-    .bg-dourado { background-color: #D4A373; }
-    .bg-lilas { background-color: #B39DDB; }
+    .tag-dp { background-color: #EEF2FF; color: #4F46E5; }
+    .tag-urgente { background-color: #FEF2F2; color: #DC2626; }
+    .tag-reuniao { background-color: #F0F9FF; color: #0284C7; }
+    .tag-rotina { background-color: #ECFDF5; color: #059669; }
 
-    /* Botões */
+    /* Estilo dos Botões */
     .stButton>button {
         border-radius: 8px;
-        border: none;
-        background-color: #C05C7E;
-        color: white;
-        font-weight: 600;
+        border: 1px solid #CBD5E1;
+        background-color: #FFFFFF;
+        color: #334155;
+        font-weight: 500;
+        transition: all 0.2s;
     }
     .stButton>button:hover {
-        background-color: #A34866;
-        color: white;
+        background-color: #F1F5F9;
+        color: #0F172A;
+        border-color: #94A3B8;
     }
     </style>
 """,
@@ -102,16 +124,17 @@ else:
       ]
   )
 
-st.title("🌸 Agenda & Planejador de Atividades")
-st.caption("Organize seus compromissos e rotinas com praticidade e estilo.")
+st.title("🗓️ Gestão de Atividades & compromissos")
+st.caption("Painel centralizado de pendências e rotinas operacionais.")
+st.write("---")
 
-# Sidebar - Novo Compromisso
+# Painel Lateral - Formulário
 with st.sidebar:
-  st.header("✨ Novo Compromisso")
+  st.subheader("➕ Adicionar Compromisso")
 
   with st.form("form_compromisso", clear_on_submit=True):
     titulo = st.text_input(
-        "Título do Compromisso / Tarefa:",
+        "Título / Descrição:",
         placeholder="ex: Demissão Lucas",
     )
 
@@ -122,35 +145,27 @@ with st.sidebar:
       hora_sel = st.time_input("Horário:", value=time(14, 0))
 
     categoria = st.selectbox(
-        "Categoria / Prioridade:",
+        "Categoria:",
         options=[
-            "DP & RH 💼",
-            "Urgente 🚨",
-            "Reunião 🤝",
-            "Pessoal / Outros 🎀",
+            "Departamento Pessoal 🏢",
+            "Urgente ⚠️",
+            "Reunião / Alinhamento 🤝",
+            "Rotina Diária 🔄",
         ],
     )
 
     detalhes = st.text_area(
-        "Observações / Detalhes (opcional):",
-        placeholder="Adicione informações importantes aqui...",
-        height=70,
+        "Observações extras:",
+        placeholder="Informações complementares...",
+        height=80,
     )
 
     submetido = st.form_submit_button(
-        "📌 Agendar Compromisso", use_container_width=True
+        "Salvar no Painel", use_container_width=True
     )
 
     if submetido:
       if titulo.strip():
-        mapa_estilos = {
-            "DP & RH 💼": ("rosa", "bg-rosa"),
-            "Urgente 🚨": ("vinho", "bg-vinho"),
-            "Reunião 🤝": ("dourado", "bg-dourado"),
-            "Pessoal / Outros 🎀": ("lilás", "bg-lilas"),
-        }
-        estilo, bg_badge = mapa_estilos.get(categoria, ("rosa", "bg-rosa"))
-
         novo_id = int(df["id"].max() + 1) if not df.empty else 1
         nova_linha = pd.DataFrame([{
             "id": novo_id,
@@ -165,53 +180,59 @@ with st.sidebar:
 
         df = pd.concat([df, nova_linha], ignore_index=True)
         df.to_csv(NOME_ARQUIVO, index=False)
-        st.success("Compromisso agendado com sucesso!")
+        st.success("Compromisso registado com sucesso!")
         st.rerun()
 
 # Conteúdo Principal - Abas
-aba1, aba2 = st.tabs(["📋 Minha Agenda", "📊 Histórico & Exportação Excel"])
+aba1, aba2 = st.tabs(["📋 Painel de Pendências", "📊 Relatório & Exportação"])
 
 with aba1:
   pendentes = df[df["concluido"] == False]
 
   if pendentes.empty:
-    st.info("Nenhum compromisso pendente. Sua agenda está em dia! ✨")
+    st.info("Nenhuma pendência registada no momento.")
   else:
-    # Ordenar por data
     cols = st.columns(3)
     for index, (idx, row) in enumerate(pendentes.iterrows()):
       col_idx = index % 3
 
-      cat = row.get("categoria", "DP & RH 💼")
-      estilo_map = {
-          "DP & RH 💼": "card-rosa",
-          "Urgente 🚨": "card-vinho",
-          "Reunião 🤝": "card-dourado",
-          "Pessoal / Outros 🎀": "card-lilás",
+      cat = row.get("categoria", "Departamento Pessoal 🏢")
+
+      mapa_estilos = {
+          "Departamento Pessoal 🏢": ("border-dp", "tag-dp", "DP"),
+          "Urgente ⚠️": ("border-urgente", "tag-urgente", "URGENTE"),
+          "Reunião / Alinhamento 🤝": (
+              "border-reuniao",
+              "tag-reuniao",
+              "REUNIÃO",
+          ),
+          "Rotina Diária 🔄": ("border-rotina", "tag-rotina", "ROTINA"),
       }
-      classe_card = estilo_map.get(cat, "card-rosa")
+      classe_border, classe_tag, label_tag = mapa_estilos.get(
+          cat, ("border-dp", "tag-dp", "GERAL")
+      )
 
       with cols[col_idx]:
         obs_html = (
-            f"<div class='card-detalhe'>📝 {row['detalhes']}</div>"
+            f"<div class='card-obs'>📝 {row['detalhes']}</div>"
             if pd.notna(row["detalhes"]) and str(row["detalhes"]).strip()
             else ""
         )
 
         st.markdown(
             f"""
-                <div class="card-compromisso {classe_card}">
-                    <div class="card-header">📌 {row['titulo']}</div>
-                    <div class="card-detalhe">📅 <b>Data:</b> {row['data_evento']}</div>
-                    <div class="card-detalhe">⏰ <b>Hora:</b> {row['hora_evento']} h</div>
+                <div class="card-compromisso {classe_border}">
+                    <div class="card-title">{row['titulo']}</div>
+                    <div class="card-info">📅 <b>Data:</b> {row['data_evento']}</div>
+                    <div class="card-info">⏰ <b>Horário:</b> {row['hora_evento']} h</div>
                     {obs_html}
-                    <div class="card-detalhe" style="margin-top: 8px;">🏷️ {row['categoria']}</div>
+                    <div><span class="card-tag {classe_tag}">{label_tag}</span></div>
                 </div>
             """,
             unsafe_allow_html=True,
         )
 
-        if st.button(f"✅ Concluir #{row['id']}", key=f"btn_{row['id']}"):
+        if st.button(f"✓ Concluir #{row['id']}", key=f"btn_{row['id']}"):
           df.loc[df["id"] == row["id"], "concluido"] = True
           df.to_csv(NOME_ARQUIVO, index=False)
           st.rerun()
@@ -220,7 +241,7 @@ with aba2:
   col_t, col_btn = st.columns([3, 1])
 
   with col_t:
-    st.subheader("📊 Relatório de Compromissos")
+    st.subheader("📊 Histórico de Compromissos")
 
   with col_btn:
     if not df.empty:
@@ -232,21 +253,21 @@ with aba2:
         )
         df_export.columns = [
             "ID",
-            "Compromisso",
+            "Título",
             "Categoria",
-            "Data",
-            "Hora",
-            "Detalhes",
-            "Criado Em",
+            "Data Evento",
+            "Hora Evento",
+            "Observações",
+            "Data Criação",
             "Status",
         ]
-        df_export.to_excel(writer, index=False, sheet_name="Agenda_Oficial")
+        df_export.to_excel(writer, index=False, sheet_name="Compromissos")
 
       st.download_button(
-          label="📥 Baixar em Excel (.xlsx)",
+          label="📥 Exportar Excel (.xlsx)",
           data=buffer.getvalue(),
           file_name=(
-              f"agenda_compromissos_{datetime.now().strftime('%Y%m%d')}.xlsx"
+              f"relatorio_compromissos_{datetime.now().strftime('%Y%m%d')}.xlsx"
           ),
           mime=(
               "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -258,11 +279,11 @@ with aba2:
       df.rename(
           columns={
               "id": "ID",
-              "titulo": "Compromisso",
+              "titulo": "Título",
               "categoria": "Categoria",
               "data_evento": "Data",
               "hora_evento": "Hora",
-              "concluido": "Concluído?",
+              "concluido": "Concluído",
           }
       ),
       use_container_width=True,
